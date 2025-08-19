@@ -123,4 +123,18 @@ public function create(Request $request, EntityManagerInterface $em):Response{
         ]);
     }
 
+    #[Route('/delete/{id}', name: '_delete', requirements: ['id' => '\d+'])]
+    public function delete(Serie $serie, Request $request, EntityManagerInterface $em):Response{
+
+        if($this->isCsrfTokenValid('delete'.$serie->getId(), $request->get('_token'))){
+        $em->remove($serie);
+        $em->flush();
+            $this->addFlash('success', 'La série a été supprimé');
+    }else{
+            $this->addFlash('danger', 'suppression impossible');
+        }
+
+        return $this->redirectToRoute('serie_list');
+    }
+
 }
