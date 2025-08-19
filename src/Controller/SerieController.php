@@ -86,8 +86,6 @@ public function create(Request $request, EntityManagerInterface $em):Response{
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-           // dd($serie);
-
 
             $em->persist($serie);
             $em->flush();
@@ -109,7 +107,7 @@ public function create(Request $request, EntityManagerInterface $em):Response{
 
         $form->handleRequest($request);
 
-        if ($form->isSubmitted()) {
+        if ($form->isSubmitted() && $form->isValid()) {
 
             $em->flush();
 
