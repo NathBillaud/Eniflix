@@ -23,22 +23,24 @@ final class SerieController extends AbstractController
     {
         //$series = $serieRepository->findAll();
 
-        $nbPerPage = $parameters->get('serie')['nb_max'];
-        $offset = ($page - 1) * $nbPerPage;
+        $nbParPage = $parameters->get('serie')['nb_max'];
+        $offset = ($page - 1) * $nbParPage;
         $criterias = [
-     //       'status' => 'Returning',
-      //      'genre' => 'Drama',
+//            'status' => 'Returning',
+//            'genre' => 'Drama',
         ];
 
-        $series = $serieRepository->findBy(
-            $criterias,
-            ['popularity' => 'DESC'],
-            $nbPerPage,
-            $offset
-        );
+//        $series = $serieRepository->findBy(
+//            $criterias,
+//            ['popularity' => 'DESC'],
+//            $nbPerPage,
+//            $offset
+//        );
+
+        $series = $serieRepository->getSeriesWithSeasons( $nbParPage, $offset);
 
         $total = $serieRepository->count($criterias);
-        $totalPages = ceil($total / $nbPerPage);
+        $totalPages = ceil($total / $nbParPage);
 
         return $this->render('serie/list.html.twig', [
                 'series' => $series,
@@ -64,15 +66,9 @@ final class SerieController extends AbstractController
         ]);
     }
 
-
-
-    #[Route('/detail/{id}', name: '_detail', requirements: ['serie' => '\d+'])]
+    #[Route('/detail/{id}', name: '_detail', requirements: ['id' => '\d+'])]
     public function detail(Serie $serie): Response
     {
-
-        if (!$serie) {
-            throw $this->createNotFoundException('Pas de série pour cet id');
-        }
 
         return $this->render('serie/detail.html.twig', [
             'serie' => $serie
@@ -80,8 +76,8 @@ final class SerieController extends AbstractController
     }
 
     #[Route('/create', name: '_create')]
-public function create(Request $request, EntityManagerInterface $em, SluggerInterface $slugger, ParameterBagInterface $parameterBag):Response{
-
+    public function create(Request $request, EntityManagerInterface $em, SluggerInterface $slugger, ParameterBagInterface $parameterBag): Response
+    {
         $serie = new Serie();
         $form = $this->createForm(SerieType::class, $serie);
 
@@ -89,30 +85,31 @@ public function create(Request $request, EntityManagerInterface $em, SluggerInte
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-
-            $file = $form->get('poster_file')->getData();
-            if($file instanceof UploadedFile){
-                $name =$slugger->slug($serie->getName().'-'.uniqid().'.'.$file->guessExtension());
+            $file = ($form->get('poster_file')->getData());
+            if ($file instanceof UploadedFile) {
+                $name = $slugger->slug($serie->getName()) . '-' . uniqid() . '.' . $file->guessExtension();
                 $dir = $parameterBag->get('serie')['poster_directory'];
                 $file->move($dir, $name);
                 $serie->setPoster($name);
             }
 
+
             $em->persist($serie);
             $em->flush();
 
-            $this->addFlash('success', 'une série a été enregistrée');
+            $this->addFlash('success', 'Une série a été enregistrée');
 
             return $this->redirectToRoute('serie_detail', ['id' => $serie->getId()]);
-
-
         }
-        return $this->render('serie/edit.html.twig',[
-            'serie_form'=> $form,
+
+        return $this->render('serie/edit.html.twig', [
+            'serie_form' => $form,
         ]);
     }
-    #[Route('/update/{id}', name: '_update', requirements: ['id' => '\d+'])]
-    public function update(Serie $serie, Request $request, EntityManagerInterface $em, SluggerInterface $slugger, ParameterBagInterface $parameterBag):Response{
+
+    #[Route('/update{id}', name: '_update', requirements: ['id' => '\d+'])]
+    public function update(Serie $serie, Request $request, EntityManagerInterface $em, SluggerInterface $slugger, ParameterBagInterface $parameterBag): Response
+    {
 
         $form = $this->createForm(SerieType::class, $serie);
 
@@ -120,42 +117,48 @@ public function create(Request $request, EntityManagerInterface $em, SluggerInte
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            $file = $form->get('poster_file')->getData();
-            if($file instanceof UploadedFile){
-                $name =$slugger->slug($serie->getName().'-'.uniqid().'.'.$file->guessExtension());
+            $file = ($form->get('poster_file')->getData());
+            if ($file instanceof UploadedFile) {
+                $name = $slugger->slug($serie->getName()) . '-' . uniqid() . '.' . $file->guessExtension();
                 $dir = $parameterBag->get('serie')['poster_directory'];
-                $file->move($dir, $name);
+                $file->move('uploads/posters/series', $name);
 
-                if ($serie->getPoster() && file_exists($dir.'/'.$serie->getPoster())) {
-                    unlink($dir.'/'.$serie->getPoster());
+
+                // si je modifie le poster 'file_exists' va vérifier si il existe avant de le remplacer/supprimer
+                if ($serie->getPoster() && file_exists('uploads/posters/series/' . $serie->getPoster())) {
+                    unlink($dir . $serie->getPoster());
                 }
+
                 $serie->setPoster($name);
             }
 
             $em->flush();
-
-            $this->addFlash('success', 'une série a été mise à jour');
+            $this->addFlash('success', 'Une série a été mise à jour');
 
             return $this->redirectToRoute('serie_detail', ['id' => $serie->getId()]);
-
         }
-        return $this->render('serie/edit.html.twig',[
-            'serie_form'=> $form,
+
+        return $this->render('serie/edit.html.twig', [
+            'serie_form' => $form,
         ]);
     }
-
     #[Route('/delete/{id}', name: '_delete', requirements: ['id' => '\d+'])]
-    public function delete(Serie $serie, Request $request, EntityManagerInterface $em):Response{
+    public function delete(Serie $serie, EntityManagerInterface $em, Request $request): Response
+    {
 
-        if($this->isCsrfTokenValid('delete'.$serie->getId(), $request->get('_token'))){
-        $em->remove($serie);
-        $em->flush();
-            $this->addFlash('success', 'La série a été supprimé');
-    }else{
-            $this->addFlash('danger', 'suppression impossible');
+        if ($this->isCsrfTokenValid('delete'.$serie->getId(), $request->get('_token'))) {
+            $em->remove($serie);
+            $em->flush();
+
+            $this->addFlash('success', 'La série a été supprimée');
+        }else{
+            $this->addFlash('danger', 'Suppression impossible');
+
+            return $this->redirectToRoute('serie_list');
         }
 
         return $this->redirectToRoute('serie_list');
     }
+
 
 }
