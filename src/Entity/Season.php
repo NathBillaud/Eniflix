@@ -18,7 +18,7 @@ class Season
     private ?int $number = null;
 
     #[ORM\Column]
-    private ?\DateTime $fisrtAirDate = null;
+    private ?\DateTime $firstAirDate = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $overview = null;
@@ -30,7 +30,7 @@ class Season
     private ?int $tmdbId = null;
 
     #[ORM\Column]
-    private ?\DateTime $dateCreaetd = null;
+    private ?\DateTime $dateCreated = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTime $dateModified = null;
@@ -56,14 +56,14 @@ class Season
         return $this;
     }
 
-    public function getFisrtAirDate(): ?\DateTime
+    public function getFirstAirDate(): ?\DateTime
     {
-        return $this->fisrtAirDate;
+        return $this->firstAirDate;
     }
 
-    public function setFisrtAirDate(\DateTime $fisrtAirDate): static
+    public function setFirstAirDate(\DateTime $firstAirDate): static
     {
-        $this->fisrtAirDate = $fisrtAirDate;
+        $this->firstAirDate = $firstAirDate;
 
         return $this;
     }
@@ -104,14 +104,14 @@ class Season
         return $this;
     }
 
-    public function getDateCreaetd(): ?\DateTime
+    public function getDateCreated(): ?\DateTime
     {
-        return $this->dateCreaetd;
+        return $this->dateCreated;
     }
 
-    public function setDateCreaetd(\DateTime $dateCreaetd): static
+    public function setDateCreated(\DateTime $dateCreated): static
     {
-        $this->dateCreaetd = $dateCreaetd;
+        $this->dateCreated = $dateCreated;
 
         return $this;
     }
